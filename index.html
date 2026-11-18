@@ -94,22 +94,35 @@ function normKey(n){ return String(n || '').trim().toLowerCase().replace(/\s+/g,
 // so it advances every time that exercise shows up, wherever it shows up.
 function keyFor(e){ return e.type === 'db' ? 'e:' + e.id : 'm:' + normKey(e.name); }
 
+// Exercise types: 'db' (dumbbell), 'm2' and 'm5' (two machine progression profiles),
+// 'fixed' (no progression), 'task' (checkbox only). The numbers for db/m2/m5 live in
+// S.settings.profiles so they can be edited in one place.
 function mkEntry(o){
-  var t = o.type || 'machine';
-  var e = {
+  var t = o.type || 'm2';
+  return {
     id: uid(), name: o.name || 'New exercise', group: o.group || '', type: t, sets: o.sets || 2,
     startWeight: o.weight != null ? o.weight : 0,
     startReps: o.reps != null ? o.reps : (t === 'db' ? 2 : 5),
-    repsMin: 2, repsMax: 6, wtJump: 5, repsBack: 2,
-    step: 2, back: 4, round: 1, detail: o.detail || ''
+    detail: o.detail || ''
   };
-  if (o.step != null){ e.step = o.step; e.back = o.back != null ? o.back : o.step * 2; }
-  return e;
+}
+function defaultProfiles(){
+  return {
+    db: { name: 'Dumbbell', repsMin: 2, repsMax: 6, wtJump: 5, repsBack: 2 },
+    m2: { name: 'Machine (small steps)', step: 2, back: 4, round: 1 },
+    m5: { name: 'Machine (big steps)', step: 5, back: 10, round: 1 }
+  };
+}
+function isMachine(e){ return e.type === 'm2' || e.type === 'm5'; }
+function profSummary(S, key){
+  var p = S.settings.profiles[key];
+  if (key === 'db') return 'Reps ' + fmtNum(p.repsMin) + ' to ' + fmtNum(p.repsMax) + ' (+1 per week), then +' + fmtNum(p.wtJump) + ' ' + UNIT + ' and back to ' + fmtNum(p.repsMin) + ' reps. Next mesocycle: back ' + fmtNum(p.repsBack) + ' reps.';
+  return '+' + fmtNum(p.step) + ' ' + UNIT + ' every time it appears. Next mesocycle: back ' + fmtNum(p.back) + ' ' + UNIT + '.';
 }
 
 function defaultProgram(){
-  var M2 = function(n, g, w){ return mkEntry({name: n, group: g, type: 'machine', weight: w, reps: 5, step: 2, back: 4}); };
-  var M5 = function(n, g, w){ return mkEntry({name: n, group: g, type: 'machine', weight: w, reps: 5, step: 5, back: 10}); };
+  var M2 = function(n, g, w){ return mkEntry({name: n, group: g, type: 'm2', weight: w, reps: 5}); };
+  var M5 = function(n, g, w){ return mkEntry({name: n, group: g, type: 'm5', weight: w, reps: 5}); };
   var D  = function(n, g, w){ return mkEntry({name: n, group: g, type: 'db', weight: w, reps: 2}); };
   return { days: [
     { name: 'Workout 1 · Mon', entries: [
@@ -134,7 +147,7 @@ function defaultProgram(){
 
 function defaultState(){
   return { v: 1, program: defaultProgram(), mesos: [], sessions: [], overrides: {},
-           settings: { deloadPct: 0.75, deloadDbDrop: 5, theme: 'dark', lastBackup: null } };
+           settings: { deloadPct: 0.75, deloadDbDrop: 5, theme: 'dark', lastBackup: null, profiles: defaultProfiles() } };
 }
 
 function migrate(o){
@@ -142,6 +155,13 @@ function migrate(o){
   if (!o || !o.program || !o.program.days) return d;
   o.mesos = o.mesos || []; o.sessions = o.sessions || []; o.overrides = o.overrides || {};
   o.settings = Object.assign({}, d.settings, o.settings || {});
+  var dp = defaultProfiles(), pr = o.settings.profiles || {};
+  o.settings.profiles = { db: Object.assign({}, dp.db, pr.db), m2: Object.assign({}, dp.m2, pr.m2), m5: Object.assign({}, dp.m5, pr.m5) };
+  // older builds stored a per-exercise step; map those onto the two machine profiles
+  o.program.days.forEach(function(day){ day.entries.forEach(function(e){
+    if (e.type === 'machine') e.type = (e.step >= 5 ? 'm5' : 'm2');
+  }); });
+  o.sessions.forEach(function(s){ (s.entries || []).forEach(function(e){ if (e.type === 'machine') e.type = 'm2'; }); });
   return o;
 }
 
@@ -173,6 +193,7 @@ function baselineFor(S, meso, key){
 function plannedFor(S, meso, e, week){
   if (e.type === 'task') return null;
   var key = keyFor(e), deload = (week === meso.length);
+  var P = S.settings.profiles[e.type] || {};
   var ov = S.overrides[key]; if (ov && ov.mesoId !== meso.id) ov = null;
   var st = startFor(meso, e);
   var base = ov ? { weight: num(ov.weight), reps: num(ov.reps), carry: false } : baselineFor(S, meso, key);
@@ -184,13 +205,13 @@ function plannedFor(S, meso, e, week){
     else if (week === 1 && e.type === 'db') p = { weight: st.weight, reps: st.reps };
     else if (base.carry || e.type === 'fixed') p = { weight: base.weight, reps: base.reps };
     else if (e.type === 'db'){
-      if (base.reps >= e.repsMax) p = { weight: base.weight + num(e.wtJump), reps: num(e.repsMin) };
+      if (base.reps >= num(P.repsMax)) p = { weight: base.weight + num(P.wtJump), reps: num(P.repsMin) };
       else p = { weight: base.weight, reps: base.reps + 1 };
-    } else p = { weight: base.weight + num(e.step), reps: base.reps };
+    } else p = { weight: base.weight + num(P.step), reps: base.reps };
   } else {
     if (!base) p = { weight: st.weight, reps: st.reps };
     else if (e.type === 'db') p = { weight: Math.max(0, base.weight - S.settings.deloadDbDrop), reps: base.reps };
-    else if (e.type === 'machine') p = { weight: floorTo(base.weight * S.settings.deloadPct, e.round), reps: base.reps };
+    else if (isMachine(e)) p = { weight: floorTo(base.weight * S.settings.deloadPct, P.round), reps: base.reps };
     else p = { weight: base.weight, reps: base.reps };
   }
   return p;
@@ -205,13 +226,14 @@ function suggestStart(S, prev){
       var key = keyFor(e), base = prev ? baselineFor(S, prev, key) : null;
       var r = { weight: num(e.startWeight), reps: num(e.startReps), from: 'start' };
       if (base){
-        if (e.type === 'db') r = { weight: base.weight, reps: Math.max(num(e.repsMin), base.reps - num(e.repsBack)), from: 'prev' };
-        else if (e.type === 'machine'){
-          if (chain[key] != null) r = { weight: chain[key] + num(e.step), reps: base.reps, from: 'prev' };
-          else r = { weight: Math.max(0, base.weight - num(e.back)), reps: base.reps, from: 'prev' };
+        var P = S.settings.profiles[e.type] || {};
+        if (e.type === 'db') r = { weight: base.weight, reps: Math.max(num(P.repsMin), base.reps - num(P.repsBack)), from: 'prev' };
+        else if (isMachine(e)){
+          if (chain[key] != null) r = { weight: chain[key] + num(P.step), reps: base.reps, from: 'prev' };
+          else r = { weight: Math.max(0, base.weight - num(P.back)), reps: base.reps, from: 'prev' };
         } else r = { weight: base.weight, reps: base.reps, from: 'prev' };
       }
-      if (e.type === 'machine') chain[key] = r.weight;
+      if (isMachine(e)) chain[key] = r.weight;
       out[e.id] = r;
     });
   });
@@ -554,6 +576,7 @@ function vSettings(){
   h += '<div class="card"><h3>Program</h3><p class="mute">Add, change, swap or reorder exercises, including checkbox-only tasks like a 10 minute run.</p>' +
        '<button class="btn" data-act="goProgram">Edit workouts &amp; exercises</button></div>';
   h += '<div class="card"><h3>Mesocycle</h3><button class="btn sec" data-act="newMesoEarly">End current mesocycle &amp; start a new one</button></div>';
+  h += vProfiles();
   h += '<div class="card"><h3>Deload week</h3><div class="two"><div><label>Machines: % of last weight</label><input type="number" inputmode="decimal" data-s="deloadPct" value="' + fmtNum(st.deloadPct * 100) + '"></div>' +
        '<div><label>Dumbbells: drop (' + UNIT + ')</label><input type="number" inputmode="decimal" data-s="deloadDbDrop" value="' + fmtNum(st.deloadDbDrop) + '"></div></div></div>';
   var lb = st.lastBackup ? daysBetween(st.lastBackup, todayStr()) : null;
@@ -568,10 +591,32 @@ function vSettings(){
 }
 
 function entryMeta(e){
-  if (e.type === 'db') return 'Dumbbell · reps ' + e.repsMin + '→' + e.repsMax + ', then +' + fmtNum(e.wtJump) + ' ' + UNIT;
-  if (e.type === 'machine') return 'Machine · +' + fmtNum(e.step) + ' ' + UNIT + ' each time · back ' + fmtNum(e.back) + ' between mesos';
+  var p = S.settings.profiles[e.type];
+  if (e.type === 'db') return p.name + ' · reps ' + fmtNum(p.repsMin) + '→' + fmtNum(p.repsMax) + ', then +' + fmtNum(p.wtJump) + ' ' + UNIT;
+  if (isMachine(e)) return p.name + ' · +' + fmtNum(p.step) + ' ' + UNIT + ' each time';
   if (e.type === 'fixed') return 'No progression';
   return 'Task (checkbox)';
+}
+
+function pfield(key, f, label, val){
+  return '<div><label>' + label + '</label><input type="number" inputmode="decimal" step="any" data-p="' + key + ':' + f + '" value="' + esc(fmtNum(val)) + '"></div>';
+}
+function vProfiles(){
+  var P = S.settings.profiles, h = '<div class="card"><h3>Progression by exercise type</h3>' +
+    '<p class="mute">Each exercise follows one of these. Change a number and every exercise of that type follows it from your next workout on. Choose an exercise\'s type under Edit workouts.</p>';
+  ['db', 'm2', 'm5'].forEach(function(k){
+    var p = P[k];
+    h += '<div style="border-top:1px solid var(--line);margin-top:14px;padding-top:6px"><label>Type name</label><input type="text" data-p="' + k + ':name" value="' + esc(p.name) + '">';
+    if (k === 'db'){
+      h += '<div class="two">' + pfield(k, 'repsMin', 'Starting reps', p.repsMin) + pfield(k, 'repsMax', 'Top reps', p.repsMax) + '</div>' +
+           '<div class="two">' + pfield(k, 'wtJump', 'Weight jump (' + UNIT + ')', p.wtJump) + pfield(k, 'repsBack', 'Reps back next meso', p.repsBack) + '</div>';
+    } else {
+      h += '<div class="two">' + pfield(k, 'step', 'Add each time (' + UNIT + ')', p.step) + pfield(k, 'back', 'Back next meso (' + UNIT + ')', p.back) + '</div>' +
+           '<div class="two">' + pfield(k, 'round', 'Deload rounds down to (' + UNIT + ')', p.round) + '<div></div></div>';
+    }
+    h += '<p class="mute" id="psum-' + k + '">' + esc(profSummary(S, k)) + '</p></div>';
+  });
+  return h + '</div>';
 }
 
 function vProgram(){
@@ -625,17 +670,16 @@ function vModal(){
     var d = modal.draft, t = d.type;
     h += '<h2>' + (modal.id ? 'Edit exercise' : 'Add exercise') + '</h2>';
     h += field('Name', 'name', d.name, 'text') + field('Muscle group (optional)', 'group', d.group, 'text');
+    var PR = S.settings.profiles;
     h += '<label>Type</label><select data-m="type">' +
-         [['db', 'Dumbbell: reps go up each week, then weight'], ['machine', 'Machine: weight goes up every time'], ['fixed', 'No progression (e.g. bodyweight technique)'], ['task', 'Task: just a checkbox']]
-           .map(function(o){ return '<option value="' + o[0] + '"' + (t === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select>';
+         [['db', PR.db.name + ': reps go up each week, then weight'], ['m2', PR.m2.name + ': +' + fmtNum(PR.m2.step) + ' ' + UNIT + ' every time'], ['m5', PR.m5.name + ': +' + fmtNum(PR.m5.step) + ' ' + UNIT + ' every time'],
+          ['fixed', 'No progression (e.g. bodyweight technique)'], ['task', 'Task: just a checkbox']]
+           .map(function(o){ return '<option value="' + o[0] + '"' + (t === o[0] ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('') + '</select>';
     if (t === 'task'){
       h += '<label>What to do</label><input type="text" data-m="detail" value="' + esc(d.detail) + '" placeholder="e.g. 10 min run">';
     } else {
       h += '<div class="two">' + field('Sets', 'sets', d.sets) + field('Start weight (' + UNIT + ')', 'startWeight', d.startWeight) + field('Start reps', 'startReps', d.startReps) + '</div>';
-      if (t === 'db') h += '<div class="two">' + field('Min reps', 'repsMin', d.repsMin) + field('Max reps', 'repsMax', d.repsMax) + '</div>' +
-                           '<div class="two">' + field('Weight jump (' + UNIT + ')', 'wtJump', d.wtJump) + field('Reps to go back between mesos', 'repsBack', d.repsBack) + '</div>';
-      if (t === 'machine') h += '<div class="two">' + field('Add each time (' + UNIT + ')', 'step', d.step) + field('Go back between mesos (' + UNIT + ')', 'back', d.back) + '</div>' +
-                                '<div class="two">' + field('Round deload down to (' + UNIT + ')', 'round', d.round) + '<div></div></div>';
+      if (PR[t]) h += '<p class="mute">' + esc(profSummary(S, t)) + ' (edit these under Settings → Progression by exercise type.)</p>';
       h += '<p class="mute">Start values are used for week 1 of a new mesocycle if there is no history yet (you can still adjust them when you start one).</p>';
     }
     h += '<button class="btn" data-act="saveEx">Save</button><button class="btn sec" data-act="closeModal">Cancel</button>';
@@ -728,13 +772,13 @@ function handle(act, ds, el){
       modal = { kind: 'edit', dayIdx: s.dayIdx, id: pe.id, draft: entryDraft(pe), fromWorkout: true }; render(); return;
     }
     case 'addEx':
-      s = curSession(); modal = { kind: 'edit', dayIdx: s.dayIdx, id: null, draft: mkEntry({ type: 'machine', weight: 0, reps: 5, step: 2, back: 4 }), fromWorkout: true }; render(); return;
+      s = curSession(); modal = { kind: 'edit', dayIdx: s.dayIdx, id: null, draft: mkEntry({ type: 'm2', weight: 0, reps: 5 }), fromWorkout: true }; render(); return;
     case 'editProg': {
       var pe2 = S.program.days[+ds.day].entries[+ds.ei];
       modal = { kind: 'edit', dayIdx: +ds.day, id: pe2.id, draft: entryDraft(pe2) }; render(); return;
     }
     case 'addProg':
-      modal = { kind: 'edit', dayIdx: +ds.day, id: null, draft: mkEntry({ type: 'machine', weight: 0, reps: 5, step: 2, back: 4 }) }; render(); return;
+      modal = { kind: 'edit', dayIdx: +ds.day, id: null, draft: mkEntry({ type: 'm2', weight: 0, reps: 5 }) }; render(); return;
     case 'saveEx': {
       var d = modal.draft;
       if (!String(d.name || '').trim()){ toast('Give it a name'); return; }
@@ -823,6 +867,20 @@ function onChange(t){
     var p = t.dataset.nm.split(':'), v2 = parseFloat(t.value);
     if (!NM.vals[p[0]]) NM.vals[p[0]] = { weight: 0, reps: 0, from: 'start' };
     NM.vals[p[0]][p[1]] = isNaN(v2) ? 0 : v2; return;
+  }
+  if (t.dataset.p){
+    var pp = t.dataset.p.split(':'), prof = S.settings.profiles[pp[0]];
+    if (!prof) return;
+    if (pp[1] === 'name'){ prof.name = t.value.trim() || prof.name; }
+    else {
+      var v4 = parseFloat(t.value); if (isNaN(v4) || v4 < 0) return;
+      if (pp[1] === 'round' && v4 <= 0) return;
+      prof[pp[1]] = v4;
+      if (pp[0] === 'db' && prof.repsMax < prof.repsMin){ if (pp[1] === 'repsMin') prof.repsMax = prof.repsMin; else prof.repsMin = prof.repsMax; render(); }
+    }
+    save();
+    var sm = $('psum-' + pp[0]); if (sm) sm.textContent = profSummary(S, pp[0]);
+    return;
   }
   if (t.dataset.s){
     var v3 = parseFloat(t.value); if (isNaN(v3)) return;
