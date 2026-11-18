@@ -1,6 +1,6 @@
 // Caches the app so it opens instantly and works with no signal.
 // If you ever replace index.html with a new version, bump CACHE (e.g. v2) so phones pick it up.
-var CACHE = 'liftlog-v1';
+var CACHE = 'yall-lift-v2';
 var FILES = ['./', 'index.html', 'manifest.json', 'icon-192.png', 'icon-512.png'];
 
 self.addEventListener('install', function (e) {
