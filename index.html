@@ -1,0 +1,873 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f1115">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<title>Lift Log</title>
+<style>
+:root{--bg:#0f1115;--card:#181b22;--card2:#20242d;--text:#e8eaf0;--mute:#8b93a3;--accent:#4ea1ff;--good:#3ecf8e;--warn:#f5a524;--bad:#ef5b5b;--line:#2a2f3a}
+[data-theme=light]{--bg:#f5f6f8;--card:#ffffff;--card2:#eceff3;--text:#14171c;--mute:#5c6573;--accent:#1c6fe0;--good:#16995f;--warn:#b86e00;--bad:#d03a3a;--line:#d9dde4}
+*{box-sizing:border-box}
+html{color-scheme:dark}
+[data-theme=light]{color-scheme:light}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.35 system-ui,-apple-system,Roboto,sans-serif;-webkit-tap-highlight-color:transparent}
+#app{padding:12px 12px 96px;max-width:560px;margin:0 auto}
+nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom);z-index:5}
+nav button{flex:1;min-height:58px;background:none;border:0;color:var(--mute);font-size:14px}
+nav button.on{color:var(--accent);font-weight:700}
+h1{font-size:22px;margin:6px 0 12px}
+h2{font-size:18px;margin:18px 0 8px}
+h3{font-size:17px;margin:0}
+p{margin:6px 0}
+.card{background:var(--card);border-radius:14px;padding:14px;margin:12px 0}
+.btn{display:block;width:100%;min-height:54px;border:0;border-radius:12px;background:var(--accent);color:#fff;font-size:17px;font-weight:600;padding:0 14px;margin:8px 0}
+.btn.sec{background:var(--card2);color:var(--text)}
+.btn.danger{background:var(--bad);color:#fff}
+.btn.sm{display:inline-block;width:auto;min-height:44px;font-size:15px;padding:0 14px;margin:4px 4px 0 0}
+.row{display:flex;gap:8px;align-items:center}
+.grow{flex:1;min-width:0}
+.mute{color:var(--mute);font-size:14px}
+.tag{display:inline-block;font-size:12px;font-weight:700;padding:2px 8px;border-radius:99px;background:var(--card2);color:var(--mute);vertical-align:middle}
+.tag.warn{background:var(--warn);color:#111}
+.tag.good{background:var(--good);color:#06130c}
+.warnt{color:var(--warn)}
+.badt{color:var(--bad)}
+.goodt{color:var(--good)}
+label{display:block;font-size:14px;color:var(--mute);margin:10px 0 4px}
+input,select,textarea{background:var(--card2);color:var(--text);border:1px solid var(--line);border-radius:10px;font:inherit;font-size:17px;padding:10px;min-height:50px;width:100%}
+textarea{min-height:64px;resize:vertical}
+.ex{background:var(--card);border-radius:14px;padding:12px;margin:12px 0}
+.ex.fin{opacity:.6}
+.ex .top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+.setrow{display:flex;align-items:center;gap:6px;margin:8px 0}
+.setrow .sn{width:22px;color:var(--mute);text-align:center;font-size:14px}
+.setrow input{flex:1;min-width:0;text-align:center;font-size:20px;min-height:54px;padding:6px}
+.setrow .x{color:var(--mute)}
+.setrow .lbl{flex:1;font-size:17px}
+.chk{width:62px;min-height:54px;border-radius:12px;border:2px solid var(--line);background:var(--card2);color:var(--mute);font-size:26px}
+.setrow.done .chk{background:var(--good);border-color:var(--good);color:#fff}
+.sk{width:44px;min-height:54px;border-radius:12px;border:0;background:none;color:var(--mute);font-size:18px}
+.setrow.skip input{opacity:.4;text-decoration:line-through}
+.setrow.skip .sk{color:var(--warn)}
+.cap{display:flex;gap:6px;margin-top:6px;font-size:12px;color:var(--mute)}
+.cap span{flex:1;text-align:center}
+details summary{color:var(--mute);font-size:14px;padding:8px 0;min-height:40px;cursor:pointer}
+.seg{display:flex;gap:8px;margin:6px 0}
+.seg button{flex:1;min-height:52px;border-radius:12px;border:2px solid var(--line);background:var(--card2);color:var(--text);font-size:17px}
+.seg button.on{border-color:var(--accent);background:var(--accent);color:#fff;font-weight:700}
+.li{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:12px 0;border-top:1px solid var(--line)}
+.li:first-child{border-top:0}
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:20;display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--card);width:100%;max-width:560px;max-height:92vh;overflow:auto;border-radius:18px 18px 0 0;padding:14px 14px 28px}
+.two{display:flex;gap:8px}
+.two>div{flex:1}
+#toast{position:fixed;left:50%;bottom:76px;transform:translateX(-50%);background:var(--card2);color:var(--text);padding:10px 16px;border-radius:99px;font-size:14px;z-index:30;display:none;border:1px solid var(--line)}
+svg{width:100%;height:auto;display:block}
+.back{background:none;border:0;color:var(--accent);font-size:17px;min-height:44px;padding:0;margin:0}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<nav id="nav"></nav>
+<div id="toast"></div>
+
+<script id="engine">
+/* ================= ENGINE (no DOM access) ================= */
+var UNIT = 'lb';
+var DOW = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+var MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+function uid(){ return Math.random().toString(36).slice(2, 8) + Date.now().toString(36).slice(-4); }
+function pad(n){ return n < 10 ? '0' + n : '' + n; }
+function todayStr(){ var d = new Date(); return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+function parseDate(s){ var p = s.split('-'); return new Date(+p[0], +p[1] - 1, +p[2]); }
+function daysBetween(a, b){ return Math.round((parseDate(b) - parseDate(a)) / 86400000); }
+function fmtDate(s){ if (!s) return ''; var d = parseDate(s); return DOW[d.getDay()] + ' ' + MON[d.getMonth()] + ' ' + d.getDate(); }
+function fmtNum(n){ if (n == null || isNaN(n)) return '–'; return Math.abs(n - Math.round(n)) < 1e-9 ? String(Math.round(n)) : (Math.round(n * 10) / 10).toFixed(1); }
+function num(x){ var n = parseFloat(x); return isNaN(n) ? 0 : n; }
+function floorTo(x, step){ step = step > 0 ? step : 1; return Math.floor(x / step + 1e-9) * step; }
+function normKey(n){ return String(n || '').trim().toLowerCase().replace(/\s+/g, ' '); }
+// Dumbbell lifts progress per entry (weekly). Everything else is chained by exercise name
+// so it advances every time that exercise shows up, wherever it shows up.
+function keyFor(e){ return e.type === 'db' ? 'e:' + e.id : 'm:' + normKey(e.name); }
+
+function mkEntry(o){
+  var t = o.type || 'machine';
+  var e = {
+    id: uid(), name: o.name || 'New exercise', group: o.group || '', type: t, sets: o.sets || 2,
+    startWeight: o.weight != null ? o.weight : 0,
+    startReps: o.reps != null ? o.reps : (t === 'db' ? 2 : 5),
+    repsMin: 2, repsMax: 6, wtJump: 5, repsBack: 2,
+    step: 2, back: 4, round: 1, detail: o.detail || ''
+  };
+  if (o.step != null){ e.step = o.step; e.back = o.back != null ? o.back : o.step * 2; }
+  return e;
+}
+
+function defaultProgram(){
+  var M2 = function(n, g, w){ return mkEntry({name: n, group: g, type: 'machine', weight: w, reps: 5, step: 2, back: 4}); };
+  var M5 = function(n, g, w){ return mkEntry({name: n, group: g, type: 'machine', weight: w, reps: 5, step: 5, back: 10}); };
+  var D  = function(n, g, w){ return mkEntry({name: n, group: g, type: 'db', weight: w, reps: 2}); };
+  return { days: [
+    { name: 'Workout 1 · Mon', entries: [
+      M5('Machine Chest Press', 'Chest', 153), M5('Machine Shoulder Press', 'Shoulders', 100),
+      M2('Pulldown (Normal Grip)', 'Back', 137), M2('Seated Cable Row', 'Back', 137),
+      D('Dumbbell Overhead Extension (Single-Arm)', 'Triceps', 40), D('Dumbbell Curl (2-Arm)', 'Biceps', 40),
+      D('Dumbbell Lateral Raise (Super ROM)', 'Shoulders', 20) ] },
+    { name: 'Workout 2 · Tue', entries: [
+      M5('Leg Press', 'Quads', 265), M5('Leg Press Calves', 'Calves', 215), M2('Seated Leg Curl', 'Hamstrings', 113),
+      D('Single Leg RDL', 'Glutes', 45),
+      mkEntry({name: 'Sissy Squat (No Machine)', group: 'Quads', type: 'fixed', weight: 160, reps: 2}) ] },
+    { name: 'Workout 3 · Wed', entries: [
+      D('Dumbbell Lateral Raise (Super ROM)', 'Shoulders', 25), D('Dumbbell Curl (2-Arm)', 'Biceps', 40),
+      D('Dumbbell Overhead Extension (Single-Arm)', 'Triceps', 40), D('Dumbbell Flye (Flat)', 'Chest', 30),
+      D('Dumbbell Skullcrusher', 'Triceps', 30), D('Lying Dumbbell Reverse Fly', 'Shoulders', 20),
+      M2('Seated Cable Row', 'Back', 138) ] },
+    { name: 'Workout 4 · Fri', entries: [
+      M2('Seated Leg Curl', 'Hamstrings', 113), D('Dumbbell Stiff Legged Deadlift', 'Hamstrings', 30),
+      D('Single Leg RDL', 'Glutes', 45), M5('Leg Press', 'Quads', 270), M5('Leg Press Calves', 'Calves', 220) ] }
+  ] };
+}
+
+function defaultState(){
+  return { v: 1, program: defaultProgram(), mesos: [], sessions: [], overrides: {},
+           settings: { deloadPct: 0.75, deloadDbDrop: 5, theme: 'dark', lastBackup: null } };
+}
+
+function migrate(o){
+  var d = defaultState();
+  if (!o || !o.program || !o.program.days) return d;
+  o.mesos = o.mesos || []; o.sessions = o.sessions || []; o.overrides = o.overrides || {};
+  o.settings = Object.assign({}, d.settings, o.settings || {});
+  return o;
+}
+
+function startFor(meso, e){
+  var v = meso.startValues && meso.startValues[e.id];
+  return v ? { weight: num(v.weight), reps: num(v.reps) } : { weight: num(e.startWeight), reps: num(e.startReps) };
+}
+
+// What did the person most recently do (in training weeks of this mesocycle) for this key?
+function baselineFor(S, meso, key){
+  var list = S.sessions.filter(function(s){ return s.mesoId === meso.id && s.status === 'done' && s.week < meso.length; });
+  list.sort(function(a, b){ return (b.finishedAt || 0) - (a.finishedAt || 0); });
+  for (var i = 0; i < list.length; i++){
+    var es = list[i].entries || [];
+    for (var j = es.length - 1; j >= 0; j--){
+      var e = es[j];
+      if (e.key !== key || e.type === 'task') continue;
+      for (var k = 0; k < e.sets.length; k++){
+        if (e.sets[k].done) return { weight: num(e.sets[k].w), reps: num(e.sets[k].r), carry: false,
+                                     planW: num(e.sets[k].pw), planR: num(e.sets[k].pr) };
+      }
+      var s0 = e.sets[0] || {};
+      return { weight: num(s0.pw), reps: num(s0.pr), carry: true };   // skipped: repeat what was planned
+    }
+  }
+  return null;
+}
+
+function plannedFor(S, meso, e, week){
+  if (e.type === 'task') return null;
+  var key = keyFor(e), deload = (week === meso.length);
+  var ov = S.overrides[key]; if (ov && ov.mesoId !== meso.id) ov = null;
+  var st = startFor(meso, e);
+  var base = ov ? { weight: num(ov.weight), reps: num(ov.reps), carry: false } : baselineFor(S, meso, key);
+  var p;
+  if (!deload){
+    if (ov) p = { weight: base.weight, reps: base.reps };
+    else if (!base) p = { weight: st.weight, reps: st.reps };
+    else if (week === 1 && e.type !== 'db' && base.planW === base.weight && base.planR === base.reps) p = { weight: st.weight, reps: st.reps };   // week 1: use the reviewed start values unless a manual edit happened
+    else if (week === 1 && e.type === 'db') p = { weight: st.weight, reps: st.reps };
+    else if (base.carry || e.type === 'fixed') p = { weight: base.weight, reps: base.reps };
+    else if (e.type === 'db'){
+      if (base.reps >= e.repsMax) p = { weight: base.weight + num(e.wtJump), reps: num(e.repsMin) };
+      else p = { weight: base.weight, reps: base.reps + 1 };
+    } else p = { weight: base.weight + num(e.step), reps: base.reps };
+  } else {
+    if (!base) p = { weight: st.weight, reps: st.reps };
+    else if (e.type === 'db') p = { weight: Math.max(0, base.weight - S.settings.deloadDbDrop), reps: base.reps };
+    else if (e.type === 'machine') p = { weight: floorTo(base.weight * S.settings.deloadPct, e.round), reps: base.reps };
+    else p = { weight: base.weight, reps: base.reps };
+  }
+  return p;
+}
+
+// Suggested starting values for a new mesocycle, based on the most recent one.
+function suggestStart(S, prev){
+  var out = {}, chain = {};
+  S.program.days.forEach(function(day){
+    day.entries.forEach(function(e){
+      if (e.type === 'task') return;
+      var key = keyFor(e), base = prev ? baselineFor(S, prev, key) : null;
+      var r = { weight: num(e.startWeight), reps: num(e.startReps), from: 'start' };
+      if (base){
+        if (e.type === 'db') r = { weight: base.weight, reps: Math.max(num(e.repsMin), base.reps - num(e.repsBack)), from: 'prev' };
+        else if (e.type === 'machine'){
+          if (chain[key] != null) r = { weight: chain[key] + num(e.step), reps: base.reps, from: 'prev' };
+          else r = { weight: Math.max(0, base.weight - num(e.back)), reps: base.reps, from: 'prev' };
+        } else r = { weight: base.weight, reps: base.reps, from: 'prev' };
+      }
+      if (e.type === 'machine') chain[key] = r.weight;
+      out[e.id] = r;
+    });
+  });
+  return out;
+}
+
+function startMeso(S, length, vals){
+  var prev = S.mesos[S.mesos.length - 1];
+  if (prev && prev.status === 'active') prev.status = 'done';
+  var sv = {};
+  Object.keys(vals).forEach(function(id){ sv[id] = { weight: num(vals[id].weight), reps: num(vals[id].reps) }; });
+  var m = { id: uid(), number: S.mesos.length + 1, length: length, startDate: todayStr(), status: 'active', startValues: sv };
+  S.mesos.push(m); S.overrides = {};
+  return m;
+}
+
+function coveredDays(S, meso, week){
+  var c = {};
+  S.sessions.forEach(function(s){
+    if (s.mesoId === meso.id && s.week === week && (s.status === 'done' || s.status === 'skipped')) c[s.dayIdx] = true;
+  });
+  return c;
+}
+
+function position(S){
+  var meso = null;
+  for (var i = S.mesos.length - 1; i >= 0; i--) if (S.mesos[i].status === 'active'){ meso = S.mesos[i]; break; }
+  if (!meso) return { meso: null };
+  var n = S.program.days.length;
+  for (var w = 1; w <= meso.length; w++){
+    var cov = coveredDays(S, meso, w), cnt = Object.keys(cov).length;
+    if (cnt < n){
+      var next = 0; while (cov[next]) next++;
+      return { meso: meso, week: w, next: next, cov: cov, deload: w === meso.length };
+    }
+  }
+  return { meso: meso, complete: true };
+}
+
+function findSession(S, meso, week, day){
+  for (var i = S.sessions.length - 1; i >= 0; i--){
+    var s = S.sessions[i];
+    if (s.mesoId === meso.id && s.week === week && s.dayIdx === day) return s;
+  }
+  return null;
+}
+
+function makeSessionEntry(S, meso, week, e){
+  var key = keyFor(e);
+  if (e.type === 'task'){
+    return { entryId: e.id, key: key, name: e.name, group: e.group, type: 'task', detail: e.detail,
+             sets: [{ done: false, skipped: false }], note: '' };
+  }
+  var p = plannedFor(S, meso, e, week), sets = [];
+  for (var i = 0; i < (e.sets || 1); i++) sets.push({ pw: p.weight, pr: p.reps, w: p.weight, r: p.reps, done: false, skipped: false });
+  if (S.overrides[key] && S.overrides[key].mesoId === meso.id) delete S.overrides[key];   // used up
+  return { entryId: e.id, key: key, name: e.name, group: e.group, type: e.type, sets: sets, note: '' };
+}
+
+function createSession(S, meso, week, day){
+  var d = S.program.days[day];
+  var s = { id: uid(), mesoId: meso.id, week: week, dayIdx: day, dayName: d.name, status: 'open',
+            createdAt: Date.now(), finishedAt: null, date: null, entries: [] };
+  d.entries.forEach(function(e){ s.entries.push(makeSessionEntry(S, meso, week, e)); });
+  S.sessions.push(s);
+  return s;
+}
+
+function ensureSession(S, meso, week, day){
+  var ex = findSession(S, meso, week, day);
+  if (ex && (ex.status === 'open' || ex.status === 'done')) return ex;
+  return createSession(S, meso, week, day);
+}
+
+function finishSession(S, s, date){
+  s.entries.forEach(function(e){ e.sets.forEach(function(st){ if (!st.done) st.skipped = true; }); });
+  var last = 0; S.sessions.forEach(function(x){ if (x.finishedAt && x.finishedAt > last) last = x.finishedAt; });
+  s.finishedAt = Math.max(Date.now(), last + 1);
+  s.date = date || todayStr();
+  s.status = 'done';
+}
+
+function skipWorkout(S, meso, week, day){
+  var d = S.program.days[day];
+  var s = { id: uid(), mesoId: meso.id, week: week, dayIdx: day, dayName: d.name, status: 'skipped',
+            createdAt: Date.now(), finishedAt: null, date: todayStr(), entries: [] };
+  S.sessions.push(s);
+  return s;
+}
+
+function lastDone(S, key){
+  var list = S.sessions.filter(function(s){ return s.status === 'done'; });
+  list.sort(function(a, b){ return (b.finishedAt || 0) - (a.finishedAt || 0); });
+  for (var i = 0; i < list.length; i++){
+    var es = list[i].entries;
+    for (var j = es.length - 1; j >= 0; j--){
+      if (es[j].key !== key || es[j].type === 'task') continue;
+      for (var k = 0; k < es[j].sets.length; k++) if (es[j].sets[k].done) return { w: es[j].sets[k].w, r: es[j].sets[k].r };
+    }
+  }
+  return null;
+}
+
+function progressNames(S){
+  var m = {};
+  S.sessions.forEach(function(s){
+    if (s.status !== 'done') return;
+    s.entries.forEach(function(e){
+      if (e.type === 'task') return;
+      if (e.sets.some(function(x){ return x.done; })) m[normKey(e.name)] = e.name;
+    });
+  });
+  return Object.keys(m).map(function(k){ return { key: k, name: m[k] }; }).sort(function(a, b){ return a.name < b.name ? -1 : 1; });
+}
+
+function seriesFor(S, nkey){
+  var pts = [];
+  var list = S.sessions.filter(function(s){ return s.status === 'done'; });
+  list.sort(function(a, b){ return (a.finishedAt || 0) - (b.finishedAt || 0); });
+  list.forEach(function(s){
+    var meso = S.mesos.filter(function(m){ return m.id === s.mesoId; })[0];
+    s.entries.forEach(function(e){
+      if (e.type === 'task' || normKey(e.name) !== nkey) return;
+      var d = null, vol = 0;
+      e.sets.forEach(function(x){ if (x.done){ if (!d) d = x; vol += num(x.w) * num(x.r); } });
+      if (!d) return;
+      pts.push({ date: s.date, weight: num(d.w), reps: num(d.r), volume: vol, deload: !!meso && s.week === meso.length });
+    });
+  });
+  return pts;
+}
+
+function historyList(S){
+  var list = S.sessions.filter(function(s){ return s.status === 'done' || s.status === 'skipped'; });
+  list.sort(function(a, b){ return a.status === 'done' && b.status === 'done' ? (a.finishedAt - b.finishedAt) : ((a.date || '') < (b.date || '') ? -1 : 1); });
+  var prevDate = null;
+  list.forEach(function(s){
+    s._gap = (s.status === 'done' && prevDate) ? daysBetween(prevDate, s.date) : null;
+    if (s.status === 'done') prevDate = s.date;
+  });
+  return list.reverse();
+}
+</script>
+
+<script id="ui">
+/* ================= UI ================= */
+var KEY = 'liftlog.v1';
+var S, view = 'home', viewArg = null, modal = null, NM = null, progName = null, progMetric = 'weight';
+
+function $(id){ return document.getElementById(id); }
+function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+
+function load(){
+  try { var r = localStorage.getItem(KEY); if (r) return migrate(JSON.parse(r)); } catch (e) {}
+  return defaultState();
+}
+function save(){
+  try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { toast('Could not save (storage blocked or full)'); }
+}
+var toastT = null;
+function toast(msg){
+  var t = $('toast'); if (!t) return;
+  t.textContent = msg; t.style.display = 'block';
+  clearTimeout(toastT); toastT = setTimeout(function(){ t.style.display = 'none'; }, 2600);
+}
+
+function curSession(){ return S.sessions.filter(function(s){ return s.id === viewArg; })[0] || null; }
+function activeMeso(){ return position(S).meso; }
+function weekLabel(meso, w){ return w === meso.length ? 'Deload' : 'Week ' + w + ' of ' + meso.length; }
+
+/* ---------- views ---------- */
+function vHome(){
+  var pos = position(S), h = '<h1>Lift Log</h1>';
+  if (!pos.meso){
+    h += '<div class="card"><p>No mesocycle running yet.</p><p class="mute">Your four workouts are already loaded. Next you\'ll set the starting weights and pick 4, 5 or 6 weeks.</p><button class="btn" data-act="newMeso">Set up first mesocycle</button></div>';
+    return h;
+  }
+  var m = pos.meso, days = S.program.days;
+  if (pos.complete){
+    h += '<div class="card"><h3>Mesocycle ' + m.number + ' complete</h3><p class="mute">Review the suggested starting weights, then start the next one.</p><button class="btn" data-act="newMeso">Review &amp; start next mesocycle</button></div>';
+    return h + lastInfo();
+  }
+  var d = days[pos.next], open = findSession(S, m, pos.week, pos.next);
+  var isOpen = open && open.status === 'open';
+  h += '<div class="card"><div class="row"><div class="grow"><h3>Mesocycle ' + m.number + ' · ' + weekLabel(m, pos.week) + '</h3></div>' +
+       (pos.deload ? '<span class="tag warn">Deload</span>' : '') + '</div>' +
+       '<p class="mute">Next up</p><p style="font-size:19px;font-weight:700;margin:2px 0 6px">' + esc(d.name) + '</p>' +
+       '<button class="btn" data-act="openDay" data-day="' + pos.next + '">' + (isOpen ? 'Continue workout' : 'Start workout') + '</button>' +
+       (isOpen ? '' : '<button class="btn sec sm" data-act="skipDay" data-day="' + pos.next + '">Skip this workout</button>') + '</div>';
+  h += '<div class="card"><h3>This week</h3>';
+  days.forEach(function(dd, i){
+    var s = findSession(S, m, pos.week, i), right = '<span class="mute">—</span>', act = 'openDay', extra = '';
+    if (s && s.status === 'done'){ right = '<span class="goodt">✓ ' + fmtDate(s.date) + '</span>'; act = 'viewSession'; extra = ' data-id="' + s.id + '"'; }
+    else if (s && s.status === 'skipped'){ right = '<span class="warnt">skipped</span>'; act = 'noop'; }
+    else if (s && s.status === 'open') right = '<span class="warnt">in progress</span>';
+    h += '<div class="li" data-act="' + act + '" data-day="' + i + '"' + extra + '><span>' + esc(dd.name) + '</span>' + right + '</div>';
+  });
+  h += '</div>';
+  return h + lastInfo();
+}
+
+function lastInfo(){
+  var list = historyList(S).filter(function(s){ return s.status === 'done'; });
+  if (!list.length) return '';
+  var s = list[0], ago = daysBetween(s.date, todayStr());
+  var cls = ago >= 5 ? 'badt' : ago >= 4 ? 'warnt' : 'mute';
+  return '<p class="' + cls + '" style="margin:14px 4px">Last workout: ' + fmtDate(s.date) + ' (' + (ago === 0 ? 'today' : ago === 1 ? 'yesterday' : ago + ' days ago') + ')</p>';
+}
+
+function setSummary(e){
+  var s0 = e.sets[0]; if (!s0 || s0.pw == null) return '';
+  return e.sets.length + ' × ' + fmtNum(s0.pr) + ' @ ' + fmtNum(s0.pw) + ' ' + UNIT;
+}
+
+function vWorkout(){
+  var s = curSession();
+  if (!s) return '<p>Workout not found.</p><button class="btn sec" data-act="nav" data-v="home">Home</button>';
+  var meso = S.mesos.filter(function(m){ return m.id === s.mesoId; })[0];
+  var h = '<button class="back" data-act="nav" data-v="home">‹ Home</button><h1>' + esc(s.dayName) + '</h1>' +
+          '<p class="mute" style="margin-top:-8px">' + (meso ? weekLabel(meso, s.week) : '') + (meso && s.week === meso.length ? ' · lighter weights' : '') + '</p>';
+  s.entries.forEach(function(e, ei){
+    var fin = e.sets.every(function(x){ return x.done || x.skipped; });
+    h += '<div class="ex' + (fin ? ' fin' : '') + '"><div class="top"><div class="grow"><h3>' + esc(e.name) + '</h3>' +
+         '<div class="mute">' + esc(e.group) + (e.group && e.type !== 'task' ? ' · ' : '') + (e.type === 'task' ? esc(e.detail) : setSummary(e)) + '</div>';
+    if (e.type !== 'task'){
+      var ld = lastDone(S, e.key);
+      var lastSess = null;
+      if (ld) h += '<div class="mute">Last time: ' + fmtNum(ld.r) + ' reps @ ' + fmtNum(ld.w) + ' ' + UNIT + '</div>';
+    }
+    h += '</div></div>';
+    if (e.type !== 'task') h += '<div class="cap"><span style="flex:0 0 22px"></span><span>' + UNIT + '</span><span style="flex:0 0 10px"></span><span>reps</span><span style="flex:0 0 106px"></span></div>';
+    e.sets.forEach(function(st, si){
+      if (e.type === 'task'){
+        h += '<div class="setrow' + (st.done ? ' done' : '') + '" data-ei="' + ei + '" data-si="' + si + '"><span class="lbl">' + esc(e.detail || e.name) + '</span>' +
+             '<button class="chk" data-act="done" aria-label="Done">✓</button></div>';
+      } else {
+        h += '<div class="setrow' + (st.done ? ' done' : '') + (st.skipped ? ' skip' : '') + '" data-ei="' + ei + '" data-si="' + si + '">' +
+             '<span class="sn">' + (si + 1) + '</span>' +
+             '<input type="number" inputmode="decimal" step="any" data-f="w" value="' + esc(fmtNum(st.w)) + '" aria-label="Weight">' +
+             '<span class="x">×</span>' +
+             '<input type="number" inputmode="numeric" step="any" data-f="r" value="' + esc(fmtNum(st.r)) + '" aria-label="Reps">' +
+             '<button class="chk" data-act="done" aria-label="Mark set done">✓</button>' +
+             '<button class="sk" data-act="skipset" aria-label="Skip set">✕</button></div>';
+      }
+    });
+    h += '<details' + (e.note ? ' open' : '') + '><summary>Notes' + (e.note ? ' ●' : '') + '</summary>' +
+         '<textarea data-f="note" data-ei="' + ei + '" placeholder="Notes for this exercise">' + esc(e.note) + '</textarea></details>';
+    h += '<div>';
+    if (e.type !== 'task') h += '<button class="btn sec sm" data-act="nextTime" data-ei="' + ei + '">Set next time…</button>';
+    h += '<button class="btn sec sm" data-act="editEx" data-ei="' + ei + '">Edit</button>';
+    h += '<button class="btn sec sm" data-act="skipall" data-ei="' + ei + '">Skip all</button></div></div>';
+  });
+  h += '<button class="btn sec" data-act="addEx">+ Add exercise</button>';
+  h += '<div class="card"><label for="fdate" style="margin-top:0">Date of this workout</label><input id="fdate" type="date" value="' + todayStr() + '">' +
+       '<button class="btn" data-act="finish">Finish workout</button>' +
+       '<button class="btn sec" data-act="discard">Discard this workout</button></div>';
+  return h;
+}
+
+function vHistory(){
+  var list = historyList(S), h = '<h1>History</h1>';
+  if (!list.length) return h + '<p class="mute">Nothing logged yet.</p>';
+  var done = list.filter(function(s){ return s.status === 'done'; });
+  var t = todayStr(), n28 = done.filter(function(s){ return daysBetween(s.date, t) < 28; }).length;
+  var maxGap = 0; done.forEach(function(s){ if (s._gap != null && s._gap > maxGap) maxGap = s._gap; });
+  h += '<div class="card"><div class="two"><div><div class="mute">Last 28 days</div><div style="font-size:22px;font-weight:700">' + n28 + ' workouts</div></div>' +
+       '<div><div class="mute">Longest gap</div><div style="font-size:22px;font-weight:700">' + maxGap + ' days</div></div></div></div>';
+  h += '<div class="card">';
+  list.forEach(function(s){
+    var meso = S.mesos.filter(function(m){ return m.id === s.mesoId; })[0];
+    var wk = meso ? ('Meso ' + meso.number + ' · ' + (s.week === meso.length ? 'Deload' : 'Wk ' + s.week)) : '';
+    var gap = '';
+    if (s._gap != null && s._gap >= 1) gap = '<div class="' + (s._gap >= 5 ? 'badt' : s._gap >= 4 ? 'warnt' : 'mute') + '" style="font-size:13px">' + s._gap + ' day' + (s._gap === 1 ? '' : 's') + ' after the previous workout</div>';
+    else if (s._gap === 0) gap = '<div class="mute" style="font-size:13px">same day as the previous workout</div>';
+    if (s.status === 'done') h += '<div class="li" data-act="viewSession" data-id="' + s.id + '"><div><div><b>' + fmtDate(s.date) + '</b> · ' + esc(s.dayName) + '</div><div class="mute">' + wk + '</div>' + gap + '</div><span class="mute">›</span></div>';
+    else h += '<div class="li"><div><div><b>' + fmtDate(s.date) + '</b> · ' + esc(s.dayName) + '</div><div class="warnt">skipped</div></div></div>';
+  });
+  return h + '</div>';
+}
+
+function vSession(){
+  var s = S.sessions.filter(function(x){ return x.id === viewArg; })[0];
+  if (!s) return '<p>Not found.</p>';
+  var meso = S.mesos.filter(function(m){ return m.id === s.mesoId; })[0];
+  var h = '<button class="back" data-act="nav" data-v="' + (viewArg && view === 'session' ? 'history' : 'home') + '">‹ Back</button><h1>' + esc(s.dayName) + '</h1>' +
+          '<p class="mute" style="margin-top:-8px">' + fmtDate(s.date) + (meso ? ' · Meso ' + meso.number + ' · ' + (s.week === meso.length ? 'Deload' : 'Week ' + s.week) : '') + '</p>';
+  s.entries.forEach(function(e){
+    h += '<div class="card"><h3>' + esc(e.name) + '</h3>';
+    if (e.type === 'task') h += '<p class="' + (e.sets[0].done ? 'goodt' : 'warnt') + '">' + (e.sets[0].done ? '✓ done' : 'not done') + ' — ' + esc(e.detail) + '</p>';
+    else h += '<p>' + e.sets.map(function(x){ return x.done ? fmtNum(x.w) + ' × ' + fmtNum(x.r) : '<span class="warnt">skipped</span>'; }).join('<br>') + '</p>';
+    if (e.note) h += '<p class="mute">“' + esc(e.note) + '”</p>';
+    h += '</div>';
+  });
+  h += '<button class="btn danger" data-act="delSession" data-id="' + s.id + '">Delete this workout from history</button>';
+  return h;
+}
+
+function chartSvg(pts, metric){
+  if (!pts.length) return '<p class="mute">No data yet.</p>';
+  var W = 340, H = 220, pl = 46, pr = 12, pt = 14, pb = 30;
+  var vals = pts.map(function(p){ return p[metric]; });
+  var min = Math.min.apply(null, vals), max = Math.max.apply(null, vals);
+  if (min === max){ min -= 1; max += 1; }
+  var padv = (max - min) * 0.08; min -= padv; max += padv;
+  var X = function(i){ return pts.length === 1 ? (pl + (W - pl - pr) / 2) : pl + (W - pl - pr) * i / (pts.length - 1); };
+  var Y = function(v){ return pt + (H - pt - pb) * (1 - (v - min) / (max - min)); };
+  var g = '', i;
+  [min + padv, (min + max) / 2, max - padv].forEach(function(v){
+    g += '<line x1="' + pl + '" x2="' + (W - pr) + '" y1="' + Y(v) + '" y2="' + Y(v) + '" style="stroke:var(--line)" stroke-width="1"/>' +
+         '<text x="' + (pl - 6) + '" y="' + (Y(v) + 4) + '" text-anchor="end" font-size="11" style="fill:var(--mute)">' + fmtNum(v) + '</text>';
+  });
+  var line = pts.map(function(p, k){ return X(k).toFixed(1) + ',' + Y(p[metric]).toFixed(1); }).join(' ');
+  g += '<polyline points="' + line + '" fill="none" style="stroke:var(--accent)" stroke-width="2.5"/>';
+  pts.forEach(function(p, k){
+    g += '<circle cx="' + X(k).toFixed(1) + '" cy="' + Y(p[metric]).toFixed(1) + '" r="4.5" style="stroke:var(--accent);fill:' + (p.deload ? 'var(--bg)' : 'var(--accent)') + '" stroke-width="2"/>';
+  });
+  g += '<text x="' + pl + '" y="' + (H - 8) + '" font-size="11" style="fill:var(--mute)">' + fmtDate(pts[0].date) + '</text>' +
+       '<text x="' + (W - pr) + '" y="' + (H - 8) + '" text-anchor="end" font-size="11" style="fill:var(--mute)">' + fmtDate(pts[pts.length - 1].date) + '</text>';
+  return '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Progress chart">' + g + '</svg>';
+}
+
+function vProgress(){
+  var names = progressNames(S), h = '<h1>Progress</h1>';
+  if (!names.length) return h + '<p class="mute">Finish a workout and your charts will show up here.</p>';
+  if (!progName || !names.some(function(n){ return n.key === progName; })) progName = names[0].key;
+  h += '<select data-act="progSel" id="progsel">' + names.map(function(n){ return '<option value="' + esc(n.key) + '"' + (n.key === progName ? ' selected' : '') + '>' + esc(n.name) + '</option>'; }).join('') + '</select>';
+  h += '<div class="seg" style="margin-top:10px">' + [['weight', 'Weight'], ['reps', 'Reps'], ['volume', 'Volume']].map(function(m){
+    return '<button class="' + (progMetric === m[0] ? 'on' : '') + '" data-act="metric" data-m="' + m[0] + '">' + m[1] + '</button>'; }).join('') + '</div>';
+  var pts = seriesFor(S, progName);
+  h += '<div class="card">' + chartSvg(pts, progMetric) + '<p class="mute">First set of each workout' + (progMetric === 'volume' ? ' · volume = total weight × reps over all sets' : '') + ' · hollow dots = deload</p></div>';
+  h += '<div class="card">';
+  pts.slice().reverse().slice(0, 12).forEach(function(p){
+    h += '<div class="li"><span>' + fmtDate(p.date) + (p.deload ? ' <span class="tag warn">deload</span>' : '') + '</span><span>' + fmtNum(p.weight) + ' ' + UNIT + ' × ' + fmtNum(p.reps) + '</span></div>';
+  });
+  return h + '</div>';
+}
+
+function vSettings(){
+  var st = S.settings, h = '<h1>Settings</h1>';
+  h += '<div class="card"><h3>Program</h3><p class="mute">Add, change, swap or reorder exercises, including checkbox-only tasks like a 10 minute run.</p>' +
+       '<button class="btn" data-act="goProgram">Edit workouts &amp; exercises</button></div>';
+  h += '<div class="card"><h3>Mesocycle</h3><button class="btn sec" data-act="newMesoEarly">End current mesocycle &amp; start a new one</button></div>';
+  h += '<div class="card"><h3>Deload week</h3><div class="two"><div><label>Machines: % of last weight</label><input type="number" inputmode="decimal" data-s="deloadPct" value="' + fmtNum(st.deloadPct * 100) + '"></div>' +
+       '<div><label>Dumbbells: drop (' + UNIT + ')</label><input type="number" inputmode="decimal" data-s="deloadDbDrop" value="' + fmtNum(st.deloadDbDrop) + '"></div></div></div>';
+  var lb = st.lastBackup ? daysBetween(st.lastBackup, todayStr()) : null;
+  h += '<div class="card"><h3>Backup</h3><p class="' + (lb == null || lb > 14 ? 'warnt' : 'mute') + '">' + (lb == null ? 'Never backed up.' : 'Last backup: ' + (lb === 0 ? 'today' : lb + ' days ago') + '.') + '</p>' +
+       '<p class="mute">Your data lives only on this phone. A backup file protects you if you clear browser data or change phones.</p>' +
+       '<button class="btn sec" data-act="export">Download backup file</button>' +
+       '<button class="btn sec" data-act="importPick">Restore from backup file</button>' +
+       '<input type="file" id="importfile" accept=".json,application/json" style="display:none"></div>';
+  h += '<div class="card"><h3>Look</h3><div class="seg"><button class="' + (st.theme !== 'light' ? 'on' : '') + '" data-act="theme" data-t="dark">Dark</button><button class="' + (st.theme === 'light' ? 'on' : '') + '" data-act="theme" data-t="light">Light</button></div></div>';
+  h += '<div class="card"><h3>Danger zone</h3><button class="btn danger" data-act="erase">Erase all data</button></div>';
+  return h;
+}
+
+function entryMeta(e){
+  if (e.type === 'db') return 'Dumbbell · reps ' + e.repsMin + '→' + e.repsMax + ', then +' + fmtNum(e.wtJump) + ' ' + UNIT;
+  if (e.type === 'machine') return 'Machine · +' + fmtNum(e.step) + ' ' + UNIT + ' each time · back ' + fmtNum(e.back) + ' between mesos';
+  if (e.type === 'fixed') return 'No progression';
+  return 'Task (checkbox)';
+}
+
+function vProgram(){
+  var h = '<button class="back" data-act="nav" data-v="settings">‹ Settings</button><h1>Workouts</h1>' +
+          '<p class="mute" style="margin-top:-8px">Changes apply to workouts you start from now on.</p>';
+  S.program.days.forEach(function(d, di){
+    h += '<div class="card"><div class="row"><h3 class="grow">' + esc(d.name) + '</h3><button class="btn sec sm" data-act="renameDay" data-day="' + di + '">Rename</button></div>';
+    d.entries.forEach(function(e, ei){
+      h += '<div class="li"><div class="grow"><div>' + esc(e.name) + '</div><div class="mute" style="font-size:13px">' + entryMeta(e) + '</div></div>' +
+           '<button class="btn sec sm" data-act="mv" data-day="' + di + '" data-ei="' + ei + '" data-dir="-1" aria-label="Move up">↑</button>' +
+           '<button class="btn sec sm" data-act="mv" data-day="' + di + '" data-ei="' + ei + '" data-dir="1" aria-label="Move down">↓</button>' +
+           '<button class="btn sec sm" data-act="editProg" data-day="' + di + '" data-ei="' + ei + '">Edit</button></div>';
+    });
+    h += '<button class="btn sec" data-act="addProg" data-day="' + di + '">+ Add exercise</button></div>';
+  });
+  return h;
+}
+
+function vNewMeso(){
+  var h = '<button class="back" data-act="nav" data-v="home">‹ Cancel</button><h1>New mesocycle</h1>';
+  h += '<div class="card"><h3>Length (includes the deload week)</h3><div class="seg">' + [4, 5, 6].map(function(n){
+    return '<button class="' + (NM.length === n ? 'on' : '') + '" data-act="setLen" data-n="' + n + '">' + n + ' weeks</button>'; }).join('') + '</div></div>';
+  h += '<p class="mute">Week 1 starting weights are below. They are suggested from your last mesocycle using your “go back” rules (or the program’s start values for the first one). Change anything that’s off.</p>';
+  S.program.days.forEach(function(d){
+    var rows = d.entries.filter(function(e){ return e.type !== 'task'; });
+    if (!rows.length) return;
+    h += '<div class="card"><h3>' + esc(d.name) + '</h3>';
+    rows.forEach(function(e){
+      var v = NM.vals[e.id] || { weight: 0, reps: 0, from: 'start' };
+      h += '<div style="margin-top:12px"><div>' + esc(e.name) + ' <span class="tag">' + (v.from === 'prev' ? 'from last meso' : 'start value') + '</span></div>' +
+           '<div class="two"><div><label>' + UNIT + '</label><input type="number" inputmode="decimal" step="any" data-nm="' + e.id + ':weight" value="' + esc(fmtNum(v.weight)) + '"></div>' +
+           '<div><label>Reps</label><input type="number" inputmode="numeric" step="any" data-nm="' + e.id + ':reps" value="' + esc(fmtNum(v.reps)) + '"></div></div></div>';
+    });
+    h += '</div>';
+  });
+  h += '<button class="btn" data-act="startMeso">Start mesocycle</button>';
+  return h;
+}
+
+function field(label, name, val, type, extra){
+  return '<div><label>' + label + '</label><input ' + (type === 'text' ? 'type="text"' : 'type="number" inputmode="decimal" step="any"') + ' data-m="' + name + '" value="' + esc(val) + '"' + (extra || '') + '></div>';
+}
+
+function vModal(){
+  var h = '<div class="ov"><div class="sheet">';
+  if (modal.kind === 'next'){
+    h += '<h2>Set next time</h2><p class="mute">' + esc(modal.name) + ': the weight and reps to use the next time this exercise comes up. The usual progression then continues from there.</p>' +
+         '<div class="two">' + field(UNIT, 'weight', fmtNum(modal.draft.weight)) + field('Reps', 'reps', fmtNum(modal.draft.reps)) + '</div>' +
+         '<button class="btn" data-act="saveNext">Save</button><button class="btn sec" data-act="closeModal">Cancel</button>';
+  } else {
+    var d = modal.draft, t = d.type;
+    h += '<h2>' + (modal.id ? 'Edit exercise' : 'Add exercise') + '</h2>';
+    h += field('Name', 'name', d.name, 'text') + field('Muscle group (optional)', 'group', d.group, 'text');
+    h += '<label>Type</label><select data-m="type">' +
+         [['db', 'Dumbbell: reps go up each week, then weight'], ['machine', 'Machine: weight goes up every time'], ['fixed', 'No progression (e.g. bodyweight technique)'], ['task', 'Task: just a checkbox']]
+           .map(function(o){ return '<option value="' + o[0] + '"' + (t === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select>';
+    if (t === 'task'){
+      h += '<label>What to do</label><input type="text" data-m="detail" value="' + esc(d.detail) + '" placeholder="e.g. 10 min run">';
+    } else {
+      h += '<div class="two">' + field('Sets', 'sets', d.sets) + field('Start weight (' + UNIT + ')', 'startWeight', d.startWeight) + field('Start reps', 'startReps', d.startReps) + '</div>';
+      if (t === 'db') h += '<div class="two">' + field('Min reps', 'repsMin', d.repsMin) + field('Max reps', 'repsMax', d.repsMax) + '</div>' +
+                           '<div class="two">' + field('Weight jump (' + UNIT + ')', 'wtJump', d.wtJump) + field('Reps to go back between mesos', 'repsBack', d.repsBack) + '</div>';
+      if (t === 'machine') h += '<div class="two">' + field('Add each time (' + UNIT + ')', 'step', d.step) + field('Go back between mesos (' + UNIT + ')', 'back', d.back) + '</div>' +
+                                '<div class="two">' + field('Round deload down to (' + UNIT + ')', 'round', d.round) + '<div></div></div>';
+      h += '<p class="mute">Start values are used for week 1 of a new mesocycle if there is no history yet (you can still adjust them when you start one).</p>';
+    }
+    h += '<button class="btn" data-act="saveEx">Save</button><button class="btn sec" data-act="closeModal">Cancel</button>';
+    if (modal.id) h += '<button class="btn danger" data-act="delEx">Remove from program</button>';
+  }
+  return h + '</div></div>';
+}
+
+function renderNav(){
+  var cur = (view === 'workout' || view === 'newMeso') ? 'home' : (view === 'session' ? 'history' : (view === 'program' ? 'settings' : view));
+  var items = [['home', 'Today'], ['history', 'History'], ['progress', 'Progress'], ['settings', 'Settings']];
+  return items.map(function(i){ return '<button class="' + (cur === i[0] ? 'on' : '') + '" data-act="nav" data-v="' + i[0] + '">' + i[1] + '</button>'; }).join('');
+}
+
+function render(){
+  var y = window.scrollY || 0, h = '';
+  document.documentElement.setAttribute('data-theme', S.settings.theme === 'light' ? 'light' : 'dark');
+  switch (view){
+    case 'home': h = vHome(); break;
+    case 'workout': h = vWorkout(); break;
+    case 'history': h = vHistory(); break;
+    case 'session': h = vSession(); break;
+    case 'progress': h = vProgress(); break;
+    case 'settings': h = vSettings(); break;
+    case 'program': h = vProgram(); break;
+    case 'newMeso': h = vNewMeso(); break;
+  }
+  $('app').innerHTML = h + (modal ? vModal() : '');
+  $('nav').innerHTML = renderNav();
+  window.scrollTo(0, y);
+}
+function go(v, arg){ view = v; viewArg = arg || null; modal = null; render(); window.scrollTo(0, 0); }
+
+/* ---------- actions ---------- */
+function beginNewMeso(){
+  var prev = S.mesos[S.mesos.length - 1] || null;
+  NM = { length: prev ? prev.length : 5, vals: suggestStart(S, prev) };
+  go('newMeso');
+}
+
+function entryDraft(e){ return JSON.parse(JSON.stringify(e)); }
+var NUMF = ['sets', 'startWeight', 'startReps', 'repsMin', 'repsMax', 'wtJump', 'repsBack', 'step', 'back', 'round', 'weight', 'reps'];
+
+function handle(act, ds, el){
+  var s, e, meso, pos, i;
+  switch (act){
+    case 'noop': return;
+    case 'nav': go(ds.v); return;
+    case 'newMeso': beginNewMeso(); return;
+    case 'newMesoEarly':
+      if (confirm('End the current mesocycle now and set up a new one?')) beginNewMeso();
+      return;
+    case 'setLen': NM.length = +ds.n; render(); return;
+    case 'startMeso':
+      startMeso(S, NM.length, NM.vals); NM = null; save(); go('home'); toast('Mesocycle started'); return;
+    case 'openDay':
+      pos = position(S); if (!pos.meso || pos.complete) return;
+      s = ensureSession(S, pos.meso, pos.week, +ds.day); save();
+      if (s.status === 'done') go('session', s.id); else go('workout', s.id);
+      return;
+    case 'skipDay':
+      pos = position(S); if (!pos.meso || pos.complete) return;
+      if (confirm('Skip this workout? It will be logged as skipped.')){ skipWorkout(S, pos.meso, pos.week, +ds.day); save(); render(); }
+      return;
+    case 'viewSession': go('session', ds.id); return;
+    case 'done': case 'skipset': {
+      var row = el.closest('.setrow'); s = curSession(); if (!row || !s) return;
+      var en = s.entries[+row.dataset.ei], st = en.sets[+row.dataset.si];
+      var wi = row.querySelector('[data-f="w"]'), ri = row.querySelector('[data-f="r"]');
+      if (wi && !isNaN(parseFloat(wi.value))) st.w = parseFloat(wi.value);
+      if (ri && !isNaN(parseFloat(ri.value))) st.r = parseFloat(ri.value);
+      if (act === 'done'){ st.done = !st.done; if (st.done) st.skipped = false; }
+      else { st.skipped = !st.skipped; if (st.skipped) st.done = false; }
+      save(); render(); return;
+    }
+    case 'skipall':
+      s = curSession(); if (!s) return; e = s.entries[+ds.ei];
+      e.sets.forEach(function(x){ x.skipped = true; x.done = false; }); save(); render(); return;
+    case 'nextTime':
+      s = curSession(); e = s.entries[+ds.ei];
+      modal = { kind: 'next', key: e.key, name: e.name, draft: { weight: e.sets[0].pw, reps: e.sets[0].pr } }; render(); return;
+    case 'saveNext':
+      meso = activeMeso(); if (!meso) return;
+      S.overrides[modal.key] = { weight: num(modal.draft.weight), reps: num(modal.draft.reps), mesoId: meso.id };
+      modal = null; save(); render(); toast('Saved for next time'); return;
+    case 'editEx': {
+      s = curSession(); var se = s.entries[+ds.ei];
+      var pe = S.program.days[s.dayIdx].entries.filter(function(x){ return x.id === se.entryId; })[0];
+      if (!pe){ toast('This exercise is no longer in the program'); return; }
+      modal = { kind: 'edit', dayIdx: s.dayIdx, id: pe.id, draft: entryDraft(pe), fromWorkout: true }; render(); return;
+    }
+    case 'addEx':
+      s = curSession(); modal = { kind: 'edit', dayIdx: s.dayIdx, id: null, draft: mkEntry({ type: 'machine', weight: 0, reps: 5, step: 2, back: 4 }), fromWorkout: true }; render(); return;
+    case 'editProg': {
+      var pe2 = S.program.days[+ds.day].entries[+ds.ei];
+      modal = { kind: 'edit', dayIdx: +ds.day, id: pe2.id, draft: entryDraft(pe2) }; render(); return;
+    }
+    case 'addProg':
+      modal = { kind: 'edit', dayIdx: +ds.day, id: null, draft: mkEntry({ type: 'machine', weight: 0, reps: 5, step: 2, back: 4 }) }; render(); return;
+    case 'saveEx': {
+      var d = modal.draft;
+      if (!String(d.name || '').trim()){ toast('Give it a name'); return; }
+      d.name = String(d.name).trim();
+      NUMF.forEach(function(f){ if (d[f] != null) d[f] = num(d[f]); });
+      if (d.type === 'task') d.sets = 1; else d.sets = Math.max(1, Math.round(d.sets || 1));
+      var day = S.program.days[modal.dayIdx];
+      if (modal.id){
+        var tgt = day.entries.filter(function(x){ return x.id === modal.id; })[0];
+        Object.keys(d).forEach(function(k){ if (k !== 'id') tgt[k] = d[k]; });
+      } else {
+        day.entries.push(d);
+        if (modal.fromWorkout){
+          s = curSession(); meso = S.mesos.filter(function(m){ return m.id === s.mesoId; })[0];
+          if (s && meso) s.entries.push(makeSessionEntry(S, meso, s.week, d));
+        }
+      }
+      modal = null; save(); render(); toast(modal === null && view === 'workout' ? 'Saved (changes apply to future workouts)' : 'Saved'); return;
+    }
+    case 'delEx':
+      if (confirm('Remove this exercise from the program? Past history is kept.')){
+        var dd = S.program.days[modal.dayIdx];
+        dd.entries = dd.entries.filter(function(x){ return x.id !== modal.id; });
+        modal = null; save(); render();
+      }
+      return;
+    case 'closeModal': modal = null; render(); return;
+    case 'mv': {
+      var arr = S.program.days[+ds.day].entries, a = +ds.ei, b = a + (+ds.dir);
+      if (b < 0 || b >= arr.length) return;
+      var tmp = arr[a]; arr[a] = arr[b]; arr[b] = tmp; save(); render(); return;
+    }
+    case 'renameDay': {
+      var nn = prompt('Workout name', S.program.days[+ds.day].name);
+      if (nn && nn.trim()){ S.program.days[+ds.day].name = nn.trim(); save(); render(); }
+      return;
+    }
+    case 'goProgram': go('program'); return;
+    case 'finish': {
+      s = curSession(); if (!s) return;
+      var left = 0; s.entries.forEach(function(x){ x.sets.forEach(function(y){ if (!y.done && !y.skipped) left++; }); });
+      if (left && !confirm(left + ' set' + (left === 1 ? '' : 's') + ' not marked done. Finish anyway? They\'ll be logged as skipped.')) return;
+      var dv = $('fdate') && $('fdate').value ? $('fdate').value : todayStr();
+      finishSession(S, s, dv); save(); go('home'); toast('Workout saved'); return;
+    }
+    case 'discard':
+      if (confirm('Discard this workout? Nothing from it will be saved.')){
+        s = curSession(); S.sessions = S.sessions.filter(function(x){ return x !== s; }); save(); go('home');
+      }
+      return;
+    case 'delSession':
+      if (confirm('Delete this workout from your history? Progression will recalculate from what remains.')){
+        S.sessions = S.sessions.filter(function(x){ return x.id !== ds.id; }); save(); go('history');
+      }
+      return;
+    case 'metric': progMetric = ds.m; render(); return;
+    case 'theme': S.settings.theme = ds.t; save(); render(); return;
+    case 'export': exportData(); return;
+    case 'importPick': var f = $('importfile'); if (f) f.click(); return;
+    case 'erase':
+      if (confirm('Erase ALL data on this phone? This cannot be undone.') && confirm('Really erase everything?')){
+        S = defaultState(); save(); go('home');
+      }
+      return;
+  }
+}
+
+function onChange(t){
+  if (!t || !t.dataset) return;
+  var s;
+  if (t.dataset.f){
+    s = curSession(); if (!s) return;
+    if (t.dataset.f === 'note'){ s.entries[+t.dataset.ei].note = t.value; save(); return; }
+    var row = t.closest('.setrow'); if (!row) return;
+    var st = s.entries[+row.dataset.ei].sets[+row.dataset.si], v = parseFloat(t.value);
+    if (!isNaN(v)){ st[t.dataset.f] = v; save(); }
+    return;
+  }
+  if (t.dataset.m && modal){
+    var k = t.dataset.m;
+    if (k === 'type'){ modal.draft.type = t.value; render(); return; }
+    modal.draft[k] = (NUMF.indexOf(k) >= 0) ? (isNaN(parseFloat(t.value)) ? 0 : parseFloat(t.value)) : t.value;
+    return;
+  }
+  if (t.dataset.nm && NM){
+    var p = t.dataset.nm.split(':'), v2 = parseFloat(t.value);
+    if (!NM.vals[p[0]]) NM.vals[p[0]] = { weight: 0, reps: 0, from: 'start' };
+    NM.vals[p[0]][p[1]] = isNaN(v2) ? 0 : v2; return;
+  }
+  if (t.dataset.s){
+    var v3 = parseFloat(t.value); if (isNaN(v3)) return;
+    S.settings[t.dataset.s] = t.dataset.s === 'deloadPct' ? Math.min(1, Math.max(0.1, v3 / 100)) : Math.max(0, v3);
+    save(); return;
+  }
+  if (t.id === 'progsel'){ progName = t.value; render(); return; }
+  if (t.id === 'importfile' && t.files && t.files[0]){
+    var rd = new FileReader();
+    rd.onload = function(){
+      try {
+        var o = JSON.parse(rd.result);
+        if (!o || !o.program || !o.sessions) throw new Error('bad file');
+        if (confirm('Replace everything on this phone with the backup (' + o.sessions.length + ' workouts)?')){
+          S = migrate(o); save(); go('home'); toast('Backup restored');
+        }
+      } catch (err) { toast('That file is not a valid backup'); }
+    };
+    rd.readAsText(t.files[0]);
+  }
+}
+
+function exportData(){
+  try {
+    var blob = new Blob([JSON.stringify(S, null, 1)], { type: 'application/json' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = 'lift-log-backup-' + todayStr() + '.json';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    S.settings.lastBackup = todayStr(); save(); render(); toast('Backup downloaded');
+  } catch (e) { toast('Could not create the backup file'); }
+}
+
+/* ---------- boot ---------- */
+document.addEventListener('click', function(e){
+  var el = e.target.closest ? e.target.closest('[data-act]') : null;
+  if (!el) return;
+  if (el.tagName === 'SELECT') return;
+  handle(el.dataset.act, el.dataset, el);
+});
+document.addEventListener('change', function(e){ onChange(e.target); });
+
+S = load();
+render();
+try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {}
+if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) navigator.serviceWorker.register('sw.js').catch(function(){});
+</script>
+</body>
+</html>
