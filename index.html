@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#0f1115">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192.png">
-<title>Lift Log</title>
+<title>Y'all Mind If I Lift?</title>
 <style>
 :root{--bg:#0f1115;--card:#181b22;--card2:#20242d;--text:#e8eaf0;--mute:#8b93a3;--accent:#4ea1ff;--good:#3ecf8e;--warn:#f5a524;--bad:#ef5b5b;--line:#2a2f3a}
 [data-theme=light]{--bg:#f5f6f8;--card:#ffffff;--card2:#eceff3;--text:#14171c;--mute:#5c6573;--accent:#1c6fe0;--good:#16995f;--warn:#b86e00;--bad:#d03a3a;--line:#d9dde4}
@@ -406,7 +406,7 @@ function weekLabel(meso, w){ return w === meso.length ? 'Deload' : 'Week ' + w +
 
 /* ---------- views ---------- */
 function vHome(){
-  var pos = position(S), h = '<h1>Lift Log</h1>';
+  var pos = position(S), h = '<h1>Y&#39;all Mind If I Lift?</h1>';
   if (!pos.meso){
     h += '<div class="card"><p>No mesocycle running yet.</p><p class="mute">Your four workouts are already loaded. Next you\'ll set the starting weights and pick 4, 5 or 6 weeks.</p><button class="btn" data-act="newMeso">Set up first mesocycle</button></div>';
     return h;
@@ -907,7 +907,7 @@ function exportData(){
   try {
     var blob = new Blob([JSON.stringify(S, null, 1)], { type: 'application/json' });
     var a = document.createElement('a');
-    a.href = URL.createObjectURL(blob); a.download = 'lift-log-backup-' + todayStr() + '.json';
+    a.href = URL.createObjectURL(blob); a.download = 'yall-mind-if-i-lift-backup-' + todayStr() + '.json';
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     S.settings.lastBackup = todayStr(); save(); render(); toast('Backup downloaded');
   } catch (e) { toast('Could not create the backup file'); }
